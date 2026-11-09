@@ -91,9 +91,10 @@
     <div class="glass anim-up" style="animation-delay: 0.05s; border-color: rgba(255,77,77,0.3); background: rgba(255,77,77,0.05);">
       <h2 class="section-title" style="color: var(--coral); margin-bottom: 15px;">⚠️ ZONA DE RESET</h2>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" onclick="window.resetV()">Resetar VOTOS</button>
-        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" onclick="window.resetM()">Resetar MENSAGEMS</button>
-        <button class="btn btn-coral w-full ripple-btn" style="grid-column: span 2;" onclick="window.resetAll()">💥 RESETAR SISTEMA INTEIRO</button>
+        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" id="btnResetP" onclick="window.resetP()">Resetar PARTICIPANTES</button>
+        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" id="btnResetV" onclick="window.resetV()">Resetar VOTOS</button>
+        <button class="btn btn-ghost ripple-btn" style="color: var(--coral); grid-column: span 2;" id="btnResetM" onclick="window.resetM()">Resetar MENSAGENS</button>
+        <button class="btn btn-coral w-full ripple-btn" style="grid-column: span 2;" id="btnResetAll" onclick="window.resetAll()">💥 RESETAR SISTEMA INTEIRO</button>
       </div>
     </div>
 
@@ -217,24 +218,83 @@
       }
     };
 
-    window.resetV = function() {
-      if(confirm('Apagar TODOS OS VOTOS de todos os dias?')) {
-        const s = FF.getState(); s.votes = []; FF.setState(s); window.renderAll(); FF.showToast('Votos deletados');
+    window.resetP = async function() {
+      if(!confirm('Apagar TODOS OS PARTICIPANTES (e os votos associados)?')) return;
+      const btn = document.getElementById('btnResetP');
+      if (btn) { btn.disabled = true; btn.textContent = 'Apagando...'; }
+      try {
+        if (typeof window._ffResetParticipants === 'function') {
+          await window._ffResetParticipants();
+        } else {
+          const s = FF.getState();
+          s.participants = [];
+          s.votes = [];
+          FF.setState(s);
+        }
+        window.renderAll();
+        FF.showToast('Todos os participantes foram apagados!');
+      } catch(e) {
+        FF.showToast('Erro ao apagar: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Resetar PARTICIPANTES'; }
       }
     };
 
-    window.resetM = function() {
-      if(confirm('Apagar TODAS AS MENSAGENS anonimas?')) {
-        const s = FF.getState(); s.messages = []; FF.setState(s); window.renderAll(); FF.showToast('Msgs deletadas');
+    window.resetV = async function() {
+      if(!confirm('Apagar TODOS OS VOTOS de todos os dias?')) return;
+      const btn = document.getElementById('btnResetV');
+      if (btn) { btn.disabled = true; btn.textContent = 'Apagando...'; }
+      try {
+        if (typeof window._ffResetVotes === 'function') {
+          await window._ffResetVotes();
+        } else {
+          const s = FF.getState(); s.votes = []; FF.setState(s);
+        }
+        window.renderAll();
+        FF.showToast('Votos deletados com sucesso!');
+      } catch(e) {
+        FF.showToast('Erro ao apagar votos: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Resetar VOTOS'; }
       }
     };
 
-    window.resetAll = function() {
-      if(confirm('ATENÇÃO: Deletar TUDO (Participantes, Votos, Mensagens) e zerar o Farofômetro?')) {
-        // Usa FF.setState para que o sync.js propague o reset ao servidor e outros dispositivos
-        const fresh = { participants: [], votes: [], messages: [], currentDay: 1, votingOpen: false, adminPin: FF.MASTER_PIN };
-        FF.setState(fresh);
-        setTimeout(() => location.reload(), 600);
+    window.resetM = async function() {
+      if(!confirm('Apagar TODAS AS MENSAGENS anonimas?')) return;
+      const btn = document.getElementById('btnResetM');
+      if (btn) { btn.disabled = true; btn.textContent = 'Apagando...'; }
+      try {
+        if (typeof window._ffResetMessages === 'function') {
+          await window._ffResetMessages();
+        } else {
+          const s = FF.getState(); s.messages = []; FF.setState(s);
+        }
+        window.renderAll();
+        FF.showToast('Mensagens deletadas com sucesso!');
+      } catch(e) {
+        FF.showToast('Erro ao apagar mensagens: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Resetar MENSAGENS'; }
+      }
+    };
+
+    window.resetAll = async function() {
+      if(!confirm('ATENÇÃO: Deletar TUDO (Participantes, Votos, Mensagens) e zerar o Farofômetro?')) return;
+      const btn = document.getElementById('btnResetAll');
+      if (btn) { btn.disabled = true; btn.textContent = 'Resetando...'; }
+      try {
+        if (typeof window._ffResetAll === 'function') {
+          await window._ffResetAll();
+        } else {
+          const fresh = { participants: [], votes: [], messages: [], currentDay: 1, votingOpen: false, adminPin: FF.MASTER_PIN };
+          FF.setState(fresh);
+        }
+        window.renderAll();
+        FF.showToast('💥 Sistema resetado com sucesso!');
+      } catch(e) {
+        FF.showToast('Erro ao resetar: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💥 RESETAR SISTEMA INTEIRO'; }
       }
     };
 
@@ -261,10 +321,18 @@
       FF.showToast(`${name} adicionado!`);
     };
 
-    window.remP = function(id, name) {
-      if(confirm(`Excluir ${name}?`)) {
-        FF.removeParticipant(id);
+    window.remP = async function(id, name) {
+      if(!confirm(`Excluir ${name}?`)) return;
+      try {
+        if (typeof window._ffRemoveParticipant === 'function') {
+          await window._ffRemoveParticipant(id);
+        } else {
+          FF.removeParticipant(id);
+        }
         window.renderAll();
+        FF.showToast(`${name} removido!`);
+      } catch(e) {
+        FF.showToast('Erro ao remover: ' + e.message, 'error');
       }
     };
 
