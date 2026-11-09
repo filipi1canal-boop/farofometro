@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Votar — Farofômetro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg">
+    <div class="sun-glow"></div>
+    <svg class="bg-wave wave-layer" viewBox="0 0 1440 120" preserveAspectRatio="none" style="bottom: 0px">
+      <path d="M0,60 C200,100 400,20 600,60 C800,100 1000,20 1200,60 C1320,80 1380,50 1440,40 L1440,120 L0,120Z" fill="var(--ocean)"/>
+    </svg>
+  </div>
+
+  <nav class="nav">
+    <a href="index.html" class="nav-back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Início
+    </a>
+    <div class="nav-logo">VOTAR</div>
+    <div id="navStatus"></div>
+  </nav>
+
+  <div class="steps" id="stepsBar">
+    <div class="step-item active" id="s1"></div>
+    <div class="step-item"        id="s2"></div>
+    <div class="step-item"        id="s3"></div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Closed -->
+    <div id="viewClosed" style="display:none; text-align:center; padding:50px 20px;">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.5" style="margin-bottom: 20px;">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <h2 style="font-size:1.5rem; margin-bottom:10px;">VOTAÇÃO FECHADA</h2>
+      <p style="color:var(--c-text2); margin-bottom:30px;">Aguarde o administrador abrir a próxima rodada.</p>
+      <a href="index.html" class="btn btn-ghost">← Voltar</a>
+    </div>
+
+    <!-- No Participants -->
+    <div id="viewNoP" style="display:none; text-align:center; padding:50px 20px;">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5" style="margin-bottom: 20px;">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <h2 style="font-size:1.5rem; margin-bottom:10px;">SEM PARTICIPANTES</h2>
+      <a href="admin.html" class="btn btn-ghost">⚙️ Admin</a>
+    </div>
+
+    <!-- Already Voted -->
+    <div id="viewVoted" style="display:none; text-align:center; padding:50px 20px;">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--leaf)" stroke-width="1.5" style="margin-bottom: 20px;" class="anim-pop">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <h2 style="font-size:1.8rem; color:var(--sun); margin-bottom:5px;">VOTO CONCLUÍDO!</h2>
+      <p style="color:var(--c-text2); margin-bottom:5px;">Seu voto e suas mensagens foram registradas em segredo 🤫.</p>
+      <p style="color:var(--leaf); font-weight: bold; font-size: 1.1rem; margin-bottom:30px;">AGORA É A VEZ DO PRÓXIMO!</p>
+      <div style="display:flex; flex-direction:column; gap:10px; padding: 0 10%;">
+        <button class="btn btn-sun w-full" onclick="location.reload()">NOVA VOTAÇÃO ➔</button>
+      </div>
+    </div>
+
+    <!-- S1: Who are you? -->
+    <div id="viewS1">
+      <div style="text-align: center; margin-bottom: 30px; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);">
+        <h2 class="hero-title" style="font-size: 2.2rem; color: var(--sun); letter-spacing: 1px; margin-bottom: 5px;">✨ É HORA DE VOTAR! ✨</h2>
+        <p style="color: var(--ocean); font-weight: 600; font-size: 0.9rem; text-transform: uppercase;">
+          📍 Farofômetro Oficial • <span id="clockNow"></span>
+        </p>
+      </div>
+      <h2 class="section-title">PASSO 1: QUEM É VOCÊ?</h2>
+      <div id="iList"></div>
+    </div>
+
+    <!-- S2: Vote -->
+    <div id="viewS2" style="display:none;">
+      <h2 class="section-title">PASSO 2: AVALIE OS COLEGAS</h2>
+      <div id="vList"></div>
+      <div style="position:sticky; bottom:15px; padding-top:10px;">
+        <button class="btn btn-sun w-full ripple-btn" onclick="goS3()">PRÓXIMO ➔</button>
+      </div>
+    </div>
+
+    <!-- S3: Message -->
+    <div id="viewS3" style="display:none;">
+      <h2 class="section-title">PASSO 3: MENSAGEM ANÔNIMA</h2>
+      
+      <div class="glass g-sun anim-up">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5" style="margin-bottom:10px;">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <p style="color:var(--c-text2); font-size:0.9rem; margin-bottom:15px;">Deixe um recado anônimo (opcional) para o grupo!</p>
+        <textarea class="textarea" id="msgText" rows="3" placeholder="Recado secreto..."></textarea>
+      </div>
+
+      <div class="glass anim-up">
+        <h3 style="font-size:0.9rem; color:var(--c-text2); margin-bottom:15px;">REVISÃO</h3>
+        <div id="revList"></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="btn btn-sun w-full ripple-btn" onclick="done()">✓ ENVIAR COM MENSAGEM</button>
+        <button class="btn btn-ghost w-full ripple-btn" onclick="skipMsg()">PULAR E ENVIAR SÓ OS VOTOS</button>
+        <button class="btn btn-ghost w-full ripple-btn" style="opacity: 0.5; margin-top:10px;" onclick="showS(2)">← Voltar</button>
+      </div>
+    </div>
+
+  </div>
+
+<script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js"></script>
+<script>
+  // Segurança contra Load Timeout e destructuring failed
+  let initHasRun = false;
+  
+  function getFF() { return window.FF || {}; }
+
+  let meId = null;
+  let votes = {};
+
+  function init() {
+    if (initHasRun) return;
+    initHasRun = true;
+    
+    try {
+      const FF = getFF();
+      if (!FF.getState) {
+        document.getElementById('iList').innerHTML = `
+          <div style="background: rgba(255,0,0,0.1); border: 2px dashed var(--coral); padding: 20px; color: white; text-align: center; border-radius: 12px; margin-top:20px;">
+            <strong style="color:var(--coral); font-size:1.3rem;">⚠️ ERRO GRAVE DO NAVEGADOR</strong><br><br>
+            O seu navegador bloqueou ou não encontrou o arquivo "app.js". Por isso os participantes não carregam.<br><br>
+            <b>Tente:</b><br>
+            1. Apertar CTRL + SHIFT + R<br>
+            2. Abrir o arquivo no Microsoft Edge ou Firefox em vez deste.<br>
+            3. Verifique se o app.js está na mesma pasta.
+          </div>
+        `;
+        return;
+      }
+      
+      const s = FF.getState();
+      const bdg = document.getElementById('navStatus');
+      const DIA_LABEL = { 1: '12/Nov', 2: '13/Nov', 3: '14/Nov', 4: '15/Nov' };
+      if(bdg) {
+        bdg.innerHTML = s.votingOpen
+          ? `<span class="pill pill-open">${DIA_LABEL[s.currentDay] || 'DIA '+s.currentDay}</span>`
+          : `<span class="pill pill-closed">FECHADO</span>`;
+      }
+
+      if (!s.votingOpen) { showV('viewClosed'); return; }
+      if (!s.participants || s.participants.length === 0) { showV('viewNoP'); return; }
+
+      window.renderS1();
+      showV('viewS1');
+    } catch(err) {
+      document.getElementById('iList').innerHTML = `
+        <div style="background: rgba(255,0,0,0.1); border: 2px dashed var(--coral); padding: 20px; color: white;">
+          <b>CRASH no Init:</b> ${err.message}
+        </div>
+      `;
+    }
+  }
+
+  function showV(vId) {
+    ['viewClosed','viewNoP','viewVoted','viewS1','viewS2','viewS3'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = id === vId ? 'block' : 'none';
+    });
+    if(['viewClosed','viewNoP','viewVoted'].includes(vId)) {
+      const sb = document.getElementById('stepsBar');
+      if(sb) sb.style.display = 'none';
+    }
+  }
+
+  function setBar(n) {
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('s'+i);
+      if(el) el.className = 'step-item ' + (i<n ? 'done' : i===n ? 'active' : '');
+    });
+  }
+
+  window.renderS1 = function() {
+    try {
+      const FF = getFF();
+      const s = FF.getState();
+      
+      document.getElementById('iList').innerHTML = s.participants.map(p => {
+        try {
+          const vv = FF.hasVoted(p.id, s.currentDay);
+          return `
+            <div class="p-card selectable ${meId===p.id?'selected':''}" style="margin-bottom:10px; gap:18px;"
+                 onclick="${vv ? `window.showVoted('${s.currentDay}')` : `window.setMe('${p.id}')`}">
+              ${FF.avatarHtml(p, 'av-xl')}
+              <div style="flex:1;">
+                <div class="p-name" style="font-size:1.15rem;">${FF.escHtml(p && p.name ? p.name : 'Sem nome')}</div>
+                <div class="p-sub">${vv ? '🟢 JÁ VOTOU' : '🔴 FALTA VOTAR (Toque Aqui)'}</div>
+              </div>
+              ${meId===p.id ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ocean)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+            </div>
+          `;
+        } catch (e) {
+          return `<div style="color:var(--coral); padding:10px;">Erro em card: ${e.message}</div>`;
+        }
+      }).join('');
+    } catch(e) {
+      document.getElementById('iList').innerHTML = `
+        <div style="color:var(--coral); border:1px solid red; padding:10px; border-radius:8px;">
+          Falha Crítica ao Renderizar Pessoas: ${e.message}
+        </div>
+      `;
+    }
+  }
+
+  window.showVoted = function(day) {
+    const vd = document.getElementById('vDay');
+    if(vd) vd.textContent = day;
+    showV('viewVoted');
+  }
+
+  window.setMe = function(id) {
+    meId = id; window.renderS1();
+    setTimeout(() => window.showS(2), 300);
+  }
+
+  window.showS = function(n) {
+    setBar(n);
+    if(n===2) goS2();
+    if(n===3) goS3();
+  }
+
+  function goS2() {
+    const FF = getFF();
+    const pList = FF.getState().participants.filter(p => p.id !== meId);
+    
+    document.getElementById('vList').innerHTML = pList.map((p, i) => `
+      <div class="glass anim-up" style="animation-delay: ${i*0.05}s">
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+          ${FF.avatarHtml(p, 'av-lg')}
+          <div>
+            <div class="p-name" style="font-size:1.1rem;">${FF.escHtml(p && p.name ? p.name : '')}</div>
+            <div class="p-sub" id="lbl-${p.id}">${getL(votes[p.id])}</div>
+          </div>
+        </div>
+        <div class="emoji-grid">
+          ${FF.EMOJIS.map(e => `
+            <div class="emoji-btn ${votes[p.id]===e.id?'selected':''}" id="eb-${p.id}-${e.id}" onclick="window.pck('${p.id}','${e.id}')">
+              <div class="e-icon">${e.icon}</div>
+              <div class="e-lbl">${e.label}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+    
+    showV('viewS2');
+    window.scrollTo(0,0);
+  }
+
+  function getL(id) {
+    const FF = getFF();
+    const e = FF.EMOJIS.find(x => x.id === id); 
+    return e ? e.label : 'Escolha...';
+  }
+
+  window.pck = function(toId, eId) {
+    const FF = getFF();
+    votes[toId] = eId;
+    const l = document.getElementById(`lbl-${toId}`);
+    if(l) l.textContent = getL(eId);
+    
+    FF.EMOJIS.forEach(e => {
+      const b = document.getElementById(`eb-${toId}-${e.id}`);
+      if(b) b.className = `emoji-btn ${e.id===eId ? 'selected' : ''}`;
+    });
+  }
+
+  window.goS3 = function() {
+    const FF = getFF();
+    const s = FF.getState();
+    const missing = s.participants.filter(p => p.id !== meId && !votes[p.id]);
+    if(missing.length) {
+      if(FF.showToast) FF.showToast(`Falta avaliar: ${missing[0].name}`, 'error');
+      else alert(`Falta avaliar: ${missing[0].name}`);
+      const lb = document.getElementById(`lbl-${missing[0].id}`);
+      if(lb) lb.scrollIntoView({behavior: 'smooth', block: 'center'});
+      return;
+    }
+    
+    document.getElementById('revList').innerHTML = Object.entries(votes).map(([id, eid]) => {
+      const p = s.participants.find(x => x.id === id);
+      const e = FF.EMOJIS.find(x => x.id === eid);
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+          <span>${FF.escHtml(p && p.name ? p.name : 'Alguém')}</span>
+          <div style="width:24px; height:24px;">${e ? e.icon : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    showV('viewS3');
+    setBar(3);
+    window.scrollTo(0,0);
+  }
+
+  window.done = function() {
+    const FF = getFF();
+    const tEl = document.getElementById('msgText');
+    const t = tEl ? tEl.value : '';
+    
+    const res = FF.submitVotes(meId, votes, t);
+    if(!res.ok) {
+      alert('VOTO BLOQUEADO: Você já votou neste dia (Dia ' + FF.getState().currentDay + ') com este participante! A regra do queridômetro permite apenas 1 voto por pessoa por dia.');
+      return;
+    }
+    
+    const sb = document.getElementById('stepsBar');
+    if(sb) sb.style.display = 'none';
+    
+    window.showVoted(FF.getState().currentDay);
+  }
+
+  window.skipMsg = function() {
+    const minp = document.getElementById('msgText');
+    if (minp) minp.value = '';
+    window.done();
+  }
+
+  setInterval(() => {
+    const d = new Date();
+    const el = document.getElementById('clockNow');
+    if (el) el.textContent = d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+  }, 1000);
+
+  // ── renderAll: chamado pelo sync.js quando estado muda ──
+  // Detecta abertura/fechamento da votação e novos participantes em tempo real
+  window.renderAll = function() {
+    const FF = getFF();
+    const s  = FF.getState();
+
+    // Atualiza badge do nav
+    const bdg = document.getElementById('navStatus');
+    if (bdg) {
+      const DIA_LABEL = { 1: '12/Nov', 2: '13/Nov', 3: '14/Nov', 4: '15/Nov' };
+      bdg.innerHTML = s.votingOpen
+        ? `<span class="pill pill-open">${DIA_LABEL[s.currentDay] || 'DIA '+s.currentDay}</span>`
+        : `<span class="pill pill-closed">FECHADO</span>`;
+    }
+
+    // Votação acabou de ABRIR → reinicia o fluxo
+    const closedEl = document.getElementById('viewClosed');
+    const noPEl    = document.getElementById('viewNoP');
+    if (s.votingOpen && closedEl && closedEl.style.display !== 'none') {
+      initHasRun = false;
+      init();
+      return;
+    }
+    // Participantes chegaram mas estava mostrando "sem participantes" → reinicia
+    if (s.votingOpen && s.participants && s.participants.length > 0
+        && noPEl && noPEl.style.display !== 'none') {
+      initHasRun = false;
+      init();
+      return;
+    }
+    // Se está no passo 1 (quem sou eu), atualiza a lista de participantes
+    const s1El = document.getElementById('viewS1');
+    if (s1El && s1El.style.display !== 'none') {
+      window.renderS1();
+    }
+  };
+
+  // Aguarda o Supabase carregar antes de mostrar a tela
+  if (window._ffSyncReady) {
+    init();
+  } else {
+    window.addEventListener('ff:syncready', init, { once: true });
+  }
+</script>
+</body>
+</html>

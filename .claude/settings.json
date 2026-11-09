@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"c:\\\\Users\\\\filip\\\\OneDrive\\\\Área de Trabalho\\\\TUDO ÁREA DE TRABALHO\\\\FAROA\\\\Farofômetro\")",
+      "Bash(npm install:*)",
+      "Bash(cmd.exe /c \"cd \\\\\"c:\\\\Users\\\\filip\\\\OneDrive\\\\Área de Trabalho\\\\TUDO ÁREA DE TRABALHO\\\\FAROA\\\\Farofômetro\\\\\" && npm install\")",
+      "Bash(cmd.exe /c \"cd \\\\\"c:\\\\Users\\\\filip\\\\OneDrive\\\\Área de Trabalho\\\\TUDO ÁREA DE TRABALHO\\\\FAROA\\\\Farofômetro\\\\\" && npm --version && npm install 2>&1\")",
+      "Bash(cmd.exe /c \"dir \\\\\"c:\\\\Users\\\\filip\\\\OneDrive\\\\Área de Trabalho\\\\TUDO ÁREA DE TRABALHO\\\\FAROA\\\\Farofômetro\\\\node_modules\\\\\" /b 2>&1 | head -5\")",
+      "Bash(ls \"c:/Users/filip/OneDrive/Área de Trabalho/TUDO ÁREA DE TRABALHO/FAROA/Farofômetro/\"*.html \"c:/Users/filip/OneDrive/Área de Trabalho/TUDO ÁREA DE TRABALHO/FAROA/Farofômetro/\"*.js \"c:/Users/filip/OneDrive/Área de Trabalho/TUDO ÁREA DE TRABALHO/FAROA/Farofômetro/\"*.css)"
+    ]
+  }
+}

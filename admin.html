@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Farofômetro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg">
+    <svg class="bg-wave wave-layer" viewBox="0 0 1440 120" preserveAspectRatio="none" style="bottom: 0px">
+      <path d="M0,60 C200,100 400,20 600,60 C800,100 1000,20 1200,60 C1320,80 1380,50 1440,40 L1440,120 L0,120Z" fill="var(--ocean)"/>
+    </svg>
+  </div>
+
+  <!-- PIN Gate -->
+  <div id="pinGate" style="position:fixed; inset:0; background:rgba(0,10,30,0.98); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px;">
+    <div style="text-align:center; max-width:360px; width:100%;">
+      <div style="margin-bottom:5px;">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5">
+          <circle cx="12" cy="12" r="5" fill="var(--sun)"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </div>
+      <div style="font-family:'Righteous',cursive; font-size:2rem; margin-bottom:4px;">
+        <span style="color:var(--ocean)">Farof</span><span style="color:var(--sun)">ômetro</span>
+      </div>
+      <p style="color:var(--c-text2); margin-bottom:28px; font-size:0.85rem; letter-spacing:1px;">ÁREA RESTRITA — ADMIN</p>
+
+      <div class="glass" style="padding:28px;">
+        <div style="margin-bottom:20px;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2 class="section-title" style="margin-bottom:20px;">🔐 ACESSO RESTRITO</h2>
+        <div class="field">
+          <label class="field-label">SENHA</label>
+          <input type="password" class="input" id="pinInput"
+                 placeholder="Digite a senha..."
+                 autocomplete="off"
+                 onkeypress="if(event.key==='Enter') checkAdminPin()">
+        </div>
+        <div id="pinError" style="color:var(--coral); font-size:0.85rem; margin-bottom:14px; display:none; text-align:center;">
+          ❌ Senha incorreta! Tente novamente.
+        </div>
+        <button class="btn btn-sun w-full" onclick="checkAdminPin()" style="font-size:1rem; padding:14px;">
+          ENTRAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="index.html" class="nav-back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Início
+    </a>
+    <div class="nav-logo">FAROFÔMETRO</div>
+    <div id="navStatus"></div>
+  </nav>
+
+  <div class="container" style="padding-top: 30px;">
+    
+    <!-- Controls -->
+    <div class="glass anim-up">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="section-title" style="margin: 0;">🎛️ CONTROLE</h2>
+        <div id="votingBadge"></div>
+      </div>
+      
+      <p class="field-label">DIA ATUAL DA FAROFA</p>
+      <div style="display: flex; gap: 8px; margin-bottom: 20px;" id="dayBtns"></div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button class="btn w-full ripple-btn" id="toggleVoteBtn" onclick="window.toggleV()" disabled style="opacity:0.5;">Carregando...</button>
+        <button class="btn btn-ghost btn-sm ripple-btn" onclick="window.renderAll()">↻</button>
+      </div>
+    </div>
+    
+    <!-- Sync Recovery -->
+    <div class="glass anim-up" style="animation-delay: 0.04s; border-color: rgba(0,180,216,0.3); background: rgba(0,180,216,0.05);">
+      <h2 class="section-title" style="color: var(--ocean); margin-bottom: 10px;">🔄 RECUPERAR DADOS</h2>
+      <p style="color: var(--c-text2); font-size: 0.82rem; text-align:center; margin-bottom: 14px; line-height:1.5;">Se algum voto ou mensagem não apareceu, clique para mesclar os dados locais deste dispositivo com o servidor.</p>
+      <button class="btn w-full ripple-btn" id="forceSyncBtn" onclick="window.forceSync()" style="background: var(--ocean);">⬆️ MESCLAR MEU ESTADO COM O SERVIDOR</button>
+    </div>
+
+    <!-- Resets -->
+    <div class="glass anim-up" style="animation-delay: 0.05s; border-color: rgba(255,77,77,0.3); background: rgba(255,77,77,0.05);">
+      <h2 class="section-title" style="color: var(--coral); margin-bottom: 15px;">⚠️ ZONA DE RESET</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" onclick="window.resetV()">Resetar VOTOS</button>
+        <button class="btn btn-ghost ripple-btn" style="color: var(--coral);" onclick="window.resetM()">Resetar MENSAGEMS</button>
+        <button class="btn btn-coral w-full ripple-btn" style="grid-column: span 2;" onclick="window.resetAll()">💥 RESETAR SISTEMA INTEIRO</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="glass anim-up" style="animation-delay: 0.1s;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center;">
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--ocean);" id="statPart">0</div>
+          <div style="font-size: 0.65rem; color: var(--c-text2); letter-spacing: 1px;">PARTICIP.</div>
+        </div>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--sun);" id="statVoted">0</div>
+          <div style="font-size: 0.65rem; color: var(--c-text2); letter-spacing: 1px;">VOTARAM</div>
+        </div>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--ocean);" id="statMsg">0</div>
+          <div style="font-size: 0.65rem; color: var(--c-text2); letter-spacing: 1px;">MENSAGENS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add P -->
+    <div class="glass anim-up" style="animation-delay: 0.2s;">
+      <h2 class="section-title">➕ ADICIONAR PARTICIPANTE</h2>
+      <div class="field">
+        <label class="field-label">Nome</label>
+        <input type="text" class="input" id="pName" placeholder="Nome">
+      </div>
+      <div class="field">
+        <label class="field-label">Foto (Arquivo)</label>
+        <input type="file" id="pPhotoFile" accept="image/*">
+        <p style="font-size: 0.75rem; color: var(--c-text2); margin-top: 5px;">A imagem será automaticamente otimizada.</p>
+      </div>
+      <button class="btn btn-sun w-full ripple-btn" onclick="addP()">✓ SALVAR</button>
+    </div>
+
+    <!-- List -->
+    <div class="glass anim-up" style="animation-delay: 0.3s;">
+      <h2 class="section-title">👥 PARTICIPANTES</h2>
+      <div id="pList"></div>
+    </div>
+    
+    <!-- Revealed Messages -->
+    <div class="glass anim-up" style="animation-delay: 0.4s; border-color: rgba(255,214,10,0.3); background: rgba(255,214,10,0.05);">
+      <h2 class="section-title" style="color: var(--sun);">📨 MENSAGENS ANÔNIMAS</h2>
+      <div id="mList"></div>
+    </div>
+
+    <!-- Vote Log (admin only) -->
+    <div class="glass anim-up" style="animation-delay: 0.5s; border-color: rgba(0,180,216,0.3); background: rgba(0,180,216,0.04);">
+      <h2 class="section-title" style="color: var(--ocean);">🗳️ LOG DE VOTOS</h2>
+      <div id="voteLog"></div>
+    </div>
+    
+  </div>
+
+<script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js"></script>
+<script>
+  if (typeof window.FF !== 'undefined') {
+    window.setDay = function(d) {
+      FF.setDay(d);
+      window.renderAll();
+      FF.showToast('Dia ' + d + ' ativo ✓');
+    };
+
+    // Proteção contra duplo toque/clique e race condition com loadState
+    let _toggleBloqueado = false;
+    window.toggleV = function() {
+      if (_toggleBloqueado) return; // ignora se já está processando
+      _toggleBloqueado = true;
+
+      const btn = document.getElementById('toggleVoteBtn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+
+      const isOpen = FF.toggleVoting();
+      window.renderAll();
+      FF.showToast(isOpen ? '🔓 Votação ABERTA' : '🔒 Votação ENCERRADA');
+
+      // Libera o botão após 2.5s — tempo suficiente para o Supabase confirmar
+      setTimeout(function() {
+        _toggleBloqueado = false;
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+        window.renderAll();
+      }, 2500);
+    };
+
+    // Habilita o botão de toggle somente após o sync estar pronto
+    // (ou seja, após loadState() terminar e o estado correto estar no localStorage)
+    function _enableToggleBtn() {
+      const btn = document.getElementById('toggleVoteBtn');
+      if (!btn) return;
+      btn.disabled = false;
+      btn.style.opacity = '';
+      window.renderAll(); // atualiza texto/classe do botão com estado real
+    }
+    if (window._ffSyncReady) {
+      _enableToggleBtn();
+    } else {
+      window.addEventListener('ff:syncready', _enableToggleBtn, { once: true });
+      // Fallback: libera em até 3.5s mesmo se o Supabase demorar
+      setTimeout(_enableToggleBtn, 3500);
+    }
+
+    window.forceSync = async function() {
+      const btn = document.getElementById('forceSyncBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+      try {
+        if (typeof window._ffForceSync === 'function') {
+          await window._ffForceSync();
+          FF.showToast('✅ Dados mesclados com o servidor!');
+        } else {
+          FF.showToast('Sync não disponível (offline?)', 'error');
+        }
+      } catch(e) {
+        FF.showToast('Erro ao sincronizar: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '⬆️ MESCLAR MEU ESTADO COM O SERVIDOR'; }
+        window.renderAll();
+      }
+    };
+
+    window.resetV = function() {
+      if(confirm('Apagar TODOS OS VOTOS de todos os dias?')) {
+        const s = FF.getState(); s.votes = []; FF.setState(s); window.renderAll(); FF.showToast('Votos deletados');
+      }
+    };
+
+    window.resetM = function() {
+      if(confirm('Apagar TODAS AS MENSAGENS anonimas?')) {
+        const s = FF.getState(); s.messages = []; FF.setState(s); window.renderAll(); FF.showToast('Msgs deletadas');
+      }
+    };
+
+    window.resetAll = function() {
+      if(confirm('ATENÇÃO: Deletar TUDO (Participantes, Votos, Mensagens) e zerar o Farofômetro?')) {
+        // Usa FF.setState para que o sync.js propague o reset ao servidor e outros dispositivos
+        const fresh = { participants: [], votes: [], messages: [], currentDay: 1, votingOpen: false, adminPin: FF.MASTER_PIN };
+        FF.setState(fresh);
+        setTimeout(() => location.reload(), 600);
+      }
+    };
+
+    window.addP = async function() {
+      const name = document.getElementById('pName').value.trim();
+      if (!name) return FF.showToast('Nome obrigatório!', 'error');
+      
+      const fileInput = document.getElementById('pPhotoFile');
+      const file = fileInput.files[0];
+      
+      let base64 = '';
+      if (file) {
+        try {
+          base64 = await FF.encodeImage(file);
+        } catch (e) {
+          return FF.showToast('Erro ao ler imagem!', 'error');
+        }
+      }
+      
+      FF.addParticipant(name, base64);
+      document.getElementById('pName').value = '';
+      fileInput.value = '';
+      window.renderAll();
+      FF.showToast(`${name} adicionado!`);
+    };
+
+    window.remP = function(id, name) {
+      if(confirm(`Excluir ${name}?`)) {
+        FF.removeParticipant(id);
+        window.renderAll();
+      }
+    };
+
+    window.renderAll = function() {
+      try {
+        const s = FF.getState();
+
+        const DIA_LABEL = { 1: '12/Nov', 2: '13/Nov', 3: '14/Nov', 4: '15/Nov' };
+        document.getElementById('navStatus').innerHTML = s.votingOpen
+          ? `<span class="pill pill-open">${DIA_LABEL[s.currentDay] || 'DIA '+s.currentDay}</span>`
+          : `<span class="pill pill-closed">FECHADO</span>`;
+
+        document.getElementById('votingBadge').innerHTML = s.votingOpen
+          ? `<span class="pill pill-open">ABERTA</span>`
+          : `<span class="pill pill-closed">FECHADA</span>`;
+
+        const tb = document.getElementById('toggleVoteBtn');
+        if (tb) {
+          tb.textContent = s.votingOpen ? 'ENCERRAR VOTAÇÃO' : 'ABRIR VOTAÇÃO';
+          tb.className = `btn w-full ripple-btn ${s.votingOpen ? 'btn-coral' : 'btn'}`;
+        }
+
+        const DIAS_FAROFA = [
+          { num: 1, label: '12/Nov' },
+          { num: 2, label: '13/Nov' },
+          { num: 3, label: '14/Nov' },
+          { num: 4, label: '15/Nov' }
+        ];
+        document.getElementById('dayBtns').innerHTML = DIAS_FAROFA.map(d => `
+          <button class="btn btn-sm ripple-btn ${s.currentDay===d.num ? 'btn-sun' : 'btn-ghost'}" style="flex:1" onclick="window.setDay(${d.num})" title="Dia ${d.num} — ${d.label}">${d.label}</button>
+        `).join('');
+
+        document.getElementById('statPart').textContent = s.participants.length;
+        document.getElementById('statVoted').textContent = FF.getVoterCount(s.currentDay);
+        document.getElementById('statMsg').textContent = FF.getMessages(s.currentDay).length;
+
+        const ls = document.getElementById('pList');
+        if (!s.participants.length) {
+          ls.innerHTML = `<p style="text-align:center; color:var(--c-text2); margin-top:20px;">Nenhum participante</p>`;
+        } else {
+          ls.innerHTML = s.participants.map(p => {
+            const vv = FF.hasVoted(p.id, s.currentDay);
+            const pendHtml = vv 
+              ? `<span style="margin-left: 8px; color: var(--leaf); font-size: 0.7rem; padding: 2px 6px; background: rgba(82,183,136,0.15); border-radius: 4px; font-weight: bold;">✓ VOTOU</span>` 
+              : `<span style="margin-left: 8px; color: var(--coral); font-size: 0.7rem; padding: 2px 6px; background: rgba(255,107,157,0.15); border-radius: 4px; font-weight: bold;">⚠️ FALTA</span>`;
+
+            return `
+            <div class="p-card" style="margin-bottom:10px;">
+              ${FF.avatarHtml(p)}
+              <div style="flex:1;">
+                <div class="p-name" style="display:flex; align-items:center;">${FF.escHtml(p.name)} ${pendHtml}</div>
+                <div class="p-sub" style="margin-top: 4px;">Recebeu ${FF.getTotalVotesFor(p.id, s.currentDay)} votos (Dia ${s.currentDay})</div>
+              </div>
+              <button class="btn btn-coral btn-sm ripple-btn" onclick="window.remP('${p.id}', '${FF.escHtml(p.name)}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+            `;
+          }).join('');
+        }
+
+        const ml = document.getElementById('mList');
+        const msgs = FF.getMessages(s.currentDay);
+        if (!msgs || !msgs.length) {
+          ml.innerHTML = `<p style="text-align:center; color:var(--c-text2); margin-top:20px;">Nenhuma mensagem no Dia ${s.currentDay}.</p>`;
+        } else {
+          ml.innerHTML = msgs.map(m => {
+            const author = s.participants.find(x => x.id === m.from);
+            const aName = author ? author.name : 'Desconhecido (Antigo)';
+            return `
+            <div class="p-card" style="margin-bottom:10px; flex-direction:column; align-items:flex-start; gap: 8px;">
+              <div style="font-weight:bold; color:var(--sun); font-size:0.85rem; text-transform:uppercase;">Enviado por: ${FF.escHtml(aName)}</div>
+              <div style="color:#fff; font-family:'Baloo 2', cursive; font-size:1.15rem;">"${FF.escHtml(m.text || '')}"</div>
+              <div style="font-size:0.7rem; color:var(--c-text2);">📝 Registrado às ${new Date(m.ts).toLocaleTimeString('pt-BR')}</div>
+            </div>
+            `;
+          }).join('');
+        }
+
+        // ── Log de Votos (admin only) ─────────────────────────
+        const vl = document.getElementById('voteLog');
+        if (vl) {
+          const dayVotes = s.votes.filter(v => v.day === s.currentDay);
+          if (!dayVotes.length) {
+            vl.innerHTML = `<p style="text-align:center; color:var(--c-text2); margin-top:20px;">Nenhum voto registrado no Dia ${s.currentDay}.</p>`;
+          } else {
+            // Agrupa por quem votou
+            const byVoter = {};
+            dayVotes.forEach(v => {
+              if (!byVoter[v.from]) byVoter[v.from] = [];
+              byVoter[v.from].push(v);
+            });
+
+            vl.innerHTML = Object.entries(byVoter).map(([fromId, votList]) => {
+              const voter = s.participants.find(p => p.id === fromId);
+              const voterName = voter ? voter.name : 'Desconhecido';
+              const rows = votList.map(v => {
+                const target = s.participants.find(p => p.id === v.to);
+                const targetName = target ? target.name : 'Desconhecido';
+                const emoji = FF.EMOJIS.find(e => e.id === v.emoji);
+                const emojiIcon = emoji ? `<span style="display:inline-flex;align-items:center;width:22px;height:22px;">${emoji.icon}</span>` : '?';
+                const emojiLabel = emoji ? emoji.label : v.emoji;
+                return `
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span style="color:var(--c-text2); font-size:0.9rem;">➜ ${FF.escHtml(targetName)}</span>
+                    <span style="display:flex; align-items:center; gap:5px; font-size:0.85rem;">${emojiIcon} ${FF.escHtml(emojiLabel)}</span>
+                  </div>`;
+              }).join('');
+
+              return `
+              <div style="margin-bottom:14px; background:rgba(0,180,216,0.08); border-radius:10px; padding:12px; border:1px solid rgba(0,180,216,0.15);">
+                <div style="font-weight:bold; color:var(--ocean); font-size:0.9rem; margin-bottom:8px; text-transform:uppercase; display:flex; align-items:center; gap:8px;">
+                  ${FF.avatarHtml(voter, '')}
+                  ${FF.escHtml(voterName)} votou em:
+                </div>
+                ${rows}
+              </div>`;
+            }).join('');
+          }
+        }
+      } catch (e) {
+        alert("Erro no renderAll: " + e.message);
+      }
+    };
+
+    if (typeof FF.addRipple === 'function') {
+      FF.addRipple(document.getElementById('pinBtn'));
+    }
+  } else {
+    alert("ALERTA: app.js não carregou! O Admin não vai funcionar direito. Limpe o cache do navegador.");
+  }
+</script>
+
+<script>
+  // ── Gate de senha do Admin ─────────────────────────
+  const ADMIN_PASS = '783552';
+
+  function checkAdminPin() {
+    const input = document.getElementById('pinInput');
+    const errEl = document.getElementById('pinError');
+    if (input.value === ADMIN_PASS) {
+      document.getElementById('pinGate').style.display = 'none';
+      sessionStorage.setItem('ff_admin_auth', '1');
+      // Renderiza o painel após desbloquear
+      setTimeout(function() {
+        if (typeof window.renderAll === 'function') window.renderAll();
+      }, 150);
+    } else {
+      errEl.style.display = 'block';
+      input.value = '';
+      input.focus();
+      // Vibra o campo de erro
+      input.style.borderColor = 'var(--coral)';
+      setTimeout(function() { input.style.borderColor = ''; }, 1000);
+    }
+  }
+
+  // Já autenticado nesta sessão → desbloqueia automaticamente
+  if (sessionStorage.getItem('ff_admin_auth') === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+  } else {
+    // Foca no campo de senha quando o gate aparecer
+    setTimeout(function() {
+      const inp = document.getElementById('pinInput');
+      if (inp) inp.focus();
+    }, 100);
+  }
+</script>
+</body>
+</html>

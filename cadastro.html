@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cadastro — Farofômetro 🌴</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .cadastro-hero {
+      text-align: center;
+      padding: 30px 20px 5px;
+    }
+    .cadastro-hero .sub {
+      color: var(--c-text2);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      margin-top: 6px;
+    }
+    .preview-wrap {
+      display: none;
+      text-align: center;
+      margin: 12px 0;
+    }
+    .preview-wrap img {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--ocean);
+    }
+    .pt-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .pt-item:last-child { border-bottom: none; }
+    .pt-item .pt-name { font-weight: 600; font-size: 0.95rem; }
+    .pt-item .pt-new {
+      font-size: 0.65rem; font-weight: bold; color: var(--leaf);
+      background: rgba(82,183,136,0.15); border-radius: 4px;
+      padding: 2px 6px; margin-left: 6px;
+    }
+    /* Tela de sucesso */
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,10,30,0.92);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+    .success-overlay.show { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .success-icon {
+      width: 100px; height: 100px;
+      background: rgba(82,183,136,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      animation: pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+    .success-name {
+      font-family: 'Righteous', cursive;
+      font-size: 2rem;
+      color: var(--sun);
+      margin-bottom: 8px;
+    }
+    .success-msg {
+      color: var(--c-text2);
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .success-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+    }
+    /* Badge de status de conexão */
+    #syncStatus {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+      z-index: 100;
+      transition: all 0.3s;
+    }
+    #syncStatus.online  { background: rgba(82,183,136,0.3); color: var(--leaf); border: 1px solid var(--leaf); }
+    #syncStatus.offline { background: rgba(255,107,107,0.3); color: var(--coral); border: 1px solid var(--coral); }
+    /* Campo de nome grande para celular */
+    #nome {
+      font-size: 1.1rem;
+      padding: 14px 16px;
+    }
+    /* Botão fixo ir votar */
+    .btn-votar-fixo {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 150;
+      width: calc(100% - 40px);
+      max-width: 420px;
+      padding: 16px;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--ocean), #0077b6);
+      box-shadow: 0 8px 30px rgba(0,180,216,0.45);
+      border: none;
+      cursor: pointer;
+      animation: slideUp 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    @keyframes slideUp {
+      from { transform: translateX(-50%) translateY(80px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+    }
+    .btn-votar-fixo.show { display: block; }
+    /* Espaço para não sobrepor conteúdo */
+    body.has-votar-btn .container { padding-bottom: 90px; }
+    /* Votação fechada notice */
+    .vot-fechada {
+      display: none;
+      background: rgba(255,107,107,0.12);
+      border: 1px solid rgba(255,107,107,0.3);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--c-text2);
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg">
+  <div class="sun-glow"></div>
+  <svg class="bg-wave wave-layer" viewBox="0 0 1440 120" preserveAspectRatio="none" style="bottom:0">
+    <path d="M0,60 C200,100 400,20 600,60 C800,100 1000,20 1200,60 C1320,80 1380,50 1440,40 L1440,120 L0,120Z" fill="var(--ocean)"/>
+  </svg>
+</div>
+
+<!-- Botão fixo: aparece após cadastro -->
+<a href="votar.html" class="btn-votar-fixo" id="btnVotarFixo">
+  🗳️ IR VOTAR AGORA
+</a>
+
+<!-- Status de conexão -->
+<div id="syncStatus" class="offline">⚡ conectando...</div>
+
+<!-- Tela de sucesso (overlay) -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--leaf)" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  </div>
+  <div class="success-name" id="successNome"></div>
+  <div class="success-msg">
+    Você entrou na farofa! 🌴<br>
+    Agora aguarde a votação ser aberta<br>
+    para avaliar os colegas.
+  </div>
+  <div class="success-actions">
+    <a href="votar.html" class="btn btn-sun w-full">🗳️ IR VOTAR AGORA</a>
+    <button class="btn btn-ghost w-full" onclick="voltarForm()">+ Cadastrar outra pessoa</button>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="cadastro-hero anim-pop">
+  <div style="margin-bottom: -10px;">
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5">
+      <circle cx="12" cy="12" r="5" fill="var(--sun)"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+  </div>
+  <h1 class="hero-title" style="font-size: 2.4rem;">
+    <span class="t-ocean">Farof</span><span class="t-sun">ômetro</span>
+  </h1>
+  <p class="sub">SE CADASTRE PARA PARTICIPAR 🌴</p>
+</div>
+
+<div class="container" style="padding-top: 15px;">
+
+  <!-- Formulário de cadastro -->
+  <div class="glass anim-up">
+    <h2 class="section-title">📝 SEU CADASTRO</h2>
+
+    <!-- Aviso de votação fechada -->
+    <div class="vot-fechada" id="votFechadaNotice">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Votação fechada no momento — mas você ainda pode se cadastrar!
+    </div>
+
+    <div class="field">
+      <label class="field-label">SEU NOME</label>
+      <input type="text" class="input" id="nome"
+             placeholder="Como te chamam na farofa?"
+             autocomplete="off" autocorrect="off"
+             maxlength="40"
+             onkeypress="if(event.key==='Enter') cadastrar()">
+    </div>
+
+    <div class="field">
+      <label class="field-label">FOTO (opcional)</label>
+      <!-- Input escondido — acionado pelo botão abaixo (funciona em iOS e Android) -->
+      <input type="file" id="foto" accept="image/*"
+             style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;">
+      <button type="button" class="btn btn-ghost w-full" id="btnFoto"
+              onclick="document.getElementById('foto').click()"
+              style="border-style:dashed; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        ESCOLHER FOTO / CÂMERA
+      </button>
+      <div id="fotoNome" style="display:none; font-size:0.8rem; color:var(--leaf); margin-top:6px; text-align:center;">
+        ✓ Foto selecionada
+      </div>
+    </div>
+
+    <!-- Preview da foto -->
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" src="" alt="Preview">
+      <div style="font-size:0.75rem; color:var(--leaf); margin-top:6px;">Foto selecionada ✓</div>
+    </div>
+
+    <button class="btn btn-sun w-full ripple-btn" id="btnCadastrar" onclick="cadastrar()" style="font-size:1.1rem; padding:16px;" disabled>
+      ⏳ Conectando...
+    </button>
+  </div>
+
+  <!-- Lista de participantes -->
+  <div class="glass anim-up" style="animation-delay: 0.1s;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <h2 class="section-title" style="margin:0;">👥 TURMA DA FAROFA</h2>
+      <span id="ptCounter" style="font-family:'Orbitron',sans-serif; font-size:1.1rem; color:var(--ocean);">0</span>
+    </div>
+    <div id="ptList">
+      <p style="text-align:center; color:var(--c-text2); padding:20px 0; font-size:0.85rem;">
+        Nenhum participante ainda.<br>Seja o(a) primeiro(a)!
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  let previewBase64 = '';
+
+  // ── Preview da foto ────────────────────────────────
+  document.getElementById('foto').addEventListener('change', async function() {
+    const file = this.files[0];
+    if (!file) { previewBase64 = ''; hidePreview(); return; }
+    try {
+      const base64 = await FF.encodeImage(file);
+      previewBase64 = base64;
+      document.getElementById('previewImg').src = base64;
+      document.getElementById('previewWrap').style.display = 'block';
+      // Atualiza texto do botão e mostra nome do arquivo
+      document.getElementById('btnFoto').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--leaf)" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        FOTO SELECIONADA ✓`;
+      document.getElementById('btnFoto').style.borderColor = 'var(--leaf)';
+      document.getElementById('btnFoto').style.color = 'var(--leaf)';
+    } catch(e) {
+      FF.showToast('Erro ao processar imagem.', 'error');
+      previewBase64 = '';
+      hidePreview();
+    }
+  });
+
+  function hidePreview() {
+    document.getElementById('previewWrap').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('btnFoto').innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      ESCOLHER FOTO / CÂMERA`;
+    document.getElementById('btnFoto').style.borderColor = '';
+    document.getElementById('btnFoto').style.color = '';
+  }
+
+  // ── Cadastrar participante ─────────────────────────
+  window.cadastrar = async function() {
+    const nomeEl = document.getElementById('nome');
+    const nome   = nomeEl.value.trim();
+
+    if (!nome) {
+      FF.showToast('Digite seu nome antes de continuar!', 'error');
+      nomeEl.focus();
+      return;
+    }
+
+    if (nome.length < 2) {
+      FF.showToast('Nome muito curto!', 'error');
+      return;
+    }
+
+    // Verifica duplicata
+    const s = FF.getState();
+    const jaExiste = s.participants.some(p =>
+      p.name.trim().toLowerCase() === nome.toLowerCase()
+    );
+    if (jaExiste) {
+      FF.showToast('Este nome já está cadastrado!', 'error');
+      return;
+    }
+
+    // Desabilita botão durante processamento
+    const btn = document.getElementById('btnCadastrar');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+      let base64 = previewBase64;
+
+      // Se não tem preview mas tem arquivo, processa agora
+      if (!base64) {
+        const file = document.getElementById('foto').files[0];
+        if (file) {
+          try { base64 = await FF.encodeImage(file); } catch(e) {}
+        }
+      }
+
+      FF.addParticipant(nome, base64);
+
+      // Reset do formulário
+      document.getElementById('nome').value = '';
+      document.getElementById('foto').value = '';
+      previewBase64 = '';
+      hidePreview();
+
+      renderParticipants();
+      mostrarSucesso(nome);
+      // Mostra botão fixo permanente
+      document.getElementById('btnVotarFixo').classList.add('show');
+      document.body.classList.add('has-votar-btn');
+
+    } catch(e) {
+      FF.showToast('Erro ao cadastrar. Tente novamente.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🌴 ENTRAR NA FAROFA';
+    }
+  };
+
+  function mostrarSucesso(nome) {
+    // Mostra toast e redireciona para o início
+    FF.showToast('🌴 ' + nome + ' entrou na farofa!');
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 1600);
+  }
+
+  window.voltarForm = function() {
+    document.getElementById('successOverlay').classList.remove('show');
+    document.getElementById('nome').focus();
+  };
+
+  // ── Renderiza lista de participantes ───────────────
+  window.renderAll = function() { renderParticipants(); };
+
+  function renderParticipants() {
+    const s = FF.getState();
+    const pts = s.participants || [];
+
+    document.getElementById('ptCounter').textContent = pts.length;
+
+    // Aviso de votação
+    const notice = document.getElementById('votFechadaNotice');
+    notice.style.display = s.votingOpen ? 'none' : 'block';
+
+    if (pts.length === 0) {
+      document.getElementById('ptList').innerHTML = `
+        <p style="text-align:center; color:var(--c-text2); padding:20px 0; font-size:0.85rem;">
+          Nenhum participante ainda.<br>Seja o(a) primeiro(a)!
+        </p>`;
+      return;
+    }
+
+    // Mostra os últimos cadastrados primeiro
+    const sorted = [...pts].reverse();
+    document.getElementById('ptList').innerHTML = sorted.map((p, i) => `
+      <div class="pt-item">
+        ${FF.avatarHtml(p, 'av-sm')}
+        <div style="flex:1;">
+          <span class="pt-name">${FF.escHtml(p.name)}</span>
+          ${i === 0 ? '<span class="pt-new">NOVO</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Status de conexão ──────────────────────────────
+  function setStatus(online) {
+    const el = document.getElementById('syncStatus');
+    el.className = online ? 'online' : 'offline';
+    el.textContent = online ? '✓ conectado' : '⚡ offline';
+  }
+
+  // Habilita o botão quando o Supabase terminar de carregar
+  // Usa evento + intervalo como dupla garantia
+  let _syncDone = false;
+  function onSyncPronto() {
+    if (_syncDone) return;
+    _syncDone = true;
+    const btn = document.getElementById('btnCadastrar');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🌴 ENTRAR NA FAROFA';
+      if (typeof FF.addRipple === 'function') FF.addRipple(btn);
+    }
+    renderParticipants();
+    setStatus(true);
+  }
+
+  if (window._ffSyncReady) {
+    onSyncPronto();
+  } else {
+    window.addEventListener('ff:syncready', onSyncPronto, { once: true });
+    // Intervalo de segurança: verifica a cada 300ms até 8s
+    const _chk = setInterval(() => {
+      if (window._ffSyncReady) { clearInterval(_chk); onSyncPronto(); }
+    }, 300);
+    setTimeout(() => { clearInterval(_chk); onSyncPronto(); }, 8000);
+  }
+
+  // ── Inicializa ─────────────────────────────────────
+  renderParticipants();
+})();
+</script>
+
+</body>
+</html>

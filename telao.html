@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telão — Farofômetro</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      overflow: hidden;
+      background: var(--bg-top);
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 24px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      padding: 20px;
+      height: calc(100vh - 70px);
+    }
+
+    .panel {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-family: 'Righteous', cursive;
+      font-size: 1.2rem;
+      color: var(--sun);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-text2);
+      text-align: center;
+    }
+
+    .tk-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tk-track {
+      animation: scrollTk linear infinite;
+    }
+
+    @keyframes scrollTk {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(-50%);
+      }
+    }
+
+    .tk-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tk-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .tk-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .tk-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .tk-badge svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .tk-badge span {
+      font-weight: 600;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+    }
+
+    .msg-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .msg-card {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .msg-card.active {
+      display: flex;
+    }
+
+    .msg-body {
+      font-size: 1.4rem;
+      font-family: 'Baloo 2', cursive;
+      line-height: 1.4;
+      margin: 20px 0;
+    }
+
+    .msg-author {
+      font-size: 0.9rem;
+      color: var(--sun);
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PIN Gate do Telão -->
+  <div id="telaoGate" style="position:fixed; inset:0; background:rgba(0,10,30,0.98); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px;">
+    <div style="text-align:center; max-width:360px; width:100%;">
+      <div style="margin-bottom:5px;">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5">
+          <circle cx="12" cy="12" r="5" fill="var(--sun)"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </div>
+      <div style="font-family:'Righteous',cursive; font-size:2rem; margin-bottom:4px;">
+        <span style="color:var(--ocean)">Farof</span><span style="color:var(--sun)">ômetro</span>
+      </div>
+      <p style="color:var(--c-text2); margin-bottom:28px; font-size:0.85rem; letter-spacing:1px;">TELÃO — ACESSO RESTRITO</p>
+      <div class="glass" style="padding:28px;">
+        <div style="margin-bottom:20px;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="1.5">
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+            <polyline points="17 2 12 7 7 2"/>
+          </svg>
+        </div>
+        <h2 class="section-title" style="margin-bottom:20px;">🔐 ACESSO RESTRITO</h2>
+        <div class="field">
+          <label class="field-label">SENHA</label>
+          <input type="password" class="input" id="telaoPin"
+                 placeholder="Digite a senha..."
+                 autocomplete="off"
+                 onkeypress="if(event.key==='Enter') checkTelaoPin()">
+        </div>
+        <div id="telaoErr" style="color:var(--coral); font-size:0.85rem; margin-bottom:14px; display:none; text-align:center;">
+          ❌ Senha incorreta! Tente novamente.
+        </div>
+        <button class="btn btn-sun w-full" onclick="checkTelaoPin()" style="font-size:1rem; padding:14px;">
+          ENTRAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg">
+    <div class="sun-glow"></div>
+  </div>
+
+  <div class="top-bar" style="margin-bottom: 10px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <a href="index.html" class="nav-back">← INÍCIO</a>
+      <div style="font-family: 'Righteous', cursive; font-size: 1.4rem; color: var(--ocean);">FAROFÔMETRO</div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;" id="dayBtns"></div>
+    <div id="statusBdg" style="font-size: 0.9rem; font-weight: 600; color: var(--c-text2);"></div>
+  </div>
+
+  <div id="legendContainer"></div>
+
+  <div class="main-grid" style="padding-top: 10px; height: calc(100vh - 150px);">
+
+    <!-- Ticker -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ocean)" stroke-width="2">
+            <path d="M18 20V10M12 20V4M6 20v-6" />
+          </svg>
+          RESULTADOS DO DIA
+        </div>
+        <span id="leftCount" style="color:var(--c-text2); font-size:0.9rem;"></span>
+      </div>
+
+      <div id="noR" class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--c-text2)" stroke-width="1.5"
+          style="margin-bottom:15px;opacity:0.5;">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <p>Aguardando votos...</p>
+      </div>
+
+      <div id="yesR" style="display:none; height:100%; overflow:hidden; mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);">
+        <div id="participantsGrid" class="p-telao-grid"></div>
+      </div>
+    </div>
+
+    <!-- Msgs -->
+    <div class="panel" style="background: rgba(255,214,10,0.05); border-color: rgba(255,214,10,0.2);">
+      <div class="panel-header">
+        <div class="panel-title" style="color:var(--sun);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          ANÔNIMOS
+        </div>
+        <span id="rightCount" style="color:var(--c-text2); font-size:0.9rem;"></span>
+      </div>
+
+      <div id="noM" class="empty-state" style="margin-top: 30px;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--c-text2)" stroke-width="1.5"
+          style="margin-bottom:15px;opacity:0.5;">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <p>Nenhum recado secreto ainda</p>
+      </div>
+
+      <div id="yesM" class="msg-marquee" style="display:none;">
+        <div id="msgCards" class="msg-track"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="sync.js"></script>
+  <script>
+    if (typeof window.FF === 'undefined') {
+      document.body.innerHTML = '<h1 style="color:red; padding:50px;">ERRO: APP.JS NÃO CARREGOU. APERTE F5.</h1>';
+    }
+
+    let FF = window.FF || {};
+    let dsel = 1;
+    let msgs = [];
+
+    function initTelao() {
+      try {
+        dsel = FF.getState().currentDay || 1;
+
+        const legC = document.getElementById('legendContainer');
+        if (legC) {
+          legC.innerHTML = `<div class="legend-bar">` + FF.EMOJIS.map(e => `
+          <div class="legend-item">${e.icon} <span>${e.label}</span></div>
+        `).join('') + `</div>`;
+        }
+
+        render();
+        setInterval(render, 15000);
+
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'farofometro_v4') render();
+        });
+        window.addEventListener('focus', render);
+      } catch (err) {
+        document.body.innerHTML += `<div style="background:red;color:white;position:fixed;top:0;left:0;width:100%;padding:20px;z-index:9999;">ERRO INIT TELÃO: ${err.message}</div>`;
+      }
+    }
+
+    function setD(d) { dsel = d; render(); }
+
+    function render() {
+      try {
+        const s = FF.getState();
+        if (!s) return;
+
+        const bdg = document.getElementById('statusBdg');
+        if (bdg) bdg.innerHTML = `${FF.getVoterCount(dsel)} VOTARAM ` +
+          (s.votingOpen ? '<span style="color:var(--leaf); margin-left:10px;">🟢 ONLINE</span>' : '<span style="color:var(--coral); margin-left:10px;">🔴 ENCERRADA</span>');
+
+        const DIA_LABEL = { 1: '12/Nov', 2: '13/Nov', 3: '14/Nov', 4: '15/Nov' };
+        const dbtns = document.getElementById('dayBtns');
+        if (dbtns) dbtns.innerHTML = [1, 2, 3, 4].map(x => `
+        <button class="btn btn-sm ${x === dsel ? 'btn-sun' : 'btn-ghost'}" onclick="setD(${x})">${DIA_LABEL[x]}</button>
+      `).join('');
+
+        // Participantes e Votos em Grade
+        const res = FF.getResults(dsel);
+        const parts = s.participants || [];
+        const pLen = parts.length;
+
+        const lCount = document.getElementById('leftCount');
+        if (lCount) lCount.textContent = `${pLen} PARTICIPANTE(S)`;
+
+        let hasV = false;
+        for (const p of parts) {
+          for (const e of FF.EMOJIS) {
+            if (res[p.id] && res[p.id][e.id] && res[p.id][e.id] > 0) hasV = true;
+          }
+        }
+
+        if (!pLen || !hasV) {
+          document.getElementById('noR').style.display = 'flex';
+          document.getElementById('yesR').style.display = 'none';
+        } else {
+          document.getElementById('noR').style.display = 'none';
+          document.getElementById('yesR').style.display = 'block';
+
+          const cards = parts.map(p => {
+            const r = res[p.id] || {};
+            const bs = FF.EMOJIS.filter(e => (r[e.id] || 0) > 0).map(e => `
+            <div class="tk-badge">${e.icon}<span>${r[e.id]}</span></div>
+          `).join('');
+
+            let n = typeof p.name === 'string' ? p.name.trim() : 'Convidado';
+
+            return `
+            <div class="p-telao-card">
+              ${FF.avatarHtml(p, 'av-lg')}
+              <div class="tk-name">${FF.escHtml(n)}</div>
+              <div class="tk-badges">${bs || '<span style="color:var(--c-text2); font-size:0.8rem;">Ainda sem votos</span>'}</div>
+            </div>
+          `;
+          }).join('');
+
+          const grid = document.getElementById('participantsGrid');
+          if (grid) {
+            // Atualiza se mudou qtd de participantes OU qtd de votos
+            const totalVotes = FF.getVoterCount(dsel);
+            const stateKey   = pLen + ':' + totalVotes;
+            if (grid.dataset.stateKey !== stateKey) {
+              grid.innerHTML = pLen > 10 ? cards + cards : cards;
+              grid.dataset.stateKey = stateKey;
+              grid.dataset.len      = pLen.toString();
+
+              if (pLen > 10) {
+                grid.style.animation = 'none';
+                grid.offsetHeight;
+                const dur = Math.max(20, Math.ceil(pLen / 5) * 8);
+                grid.style.animation = `marquee-up ${dur}s linear infinite`;
+              } else {
+                grid.style.animation = 'none';
+              }
+            }
+          }
+        }
+
+        // Msgs Marquee
+        msgs = FF.getMessages(dsel) || [];
+        const rCount = document.getElementById('rightCount');
+        if (rCount) rCount.textContent = `${msgs.length} RECADO(S)`;
+
+        if (msgs.length === 0) {
+          document.getElementById('noM').style.display = 'flex';
+          document.getElementById('yesM').style.display = 'none';
+          document.getElementById('msgCards').dataset.len = '0';
+        } else {
+          document.getElementById('noM').style.display = 'none';
+          document.getElementById('yesM').style.display = 'flex';
+
+          const mc = document.getElementById('msgCards');
+          if (mc) {
+            const currentLen = mc.dataset.len;
+            if (currentLen !== msgs.length.toString()) {
+              const mHtml = msgs.map((m) => `
+              <div class="msg-card-m">
+                <div class="msg-body">"${FF.escHtml(m.text || '')}"</div>
+                <div class="msg-author">— ANÔNIMO</div>
+              </div>
+            `).join('');
+
+              mc.innerHTML = msgs.length > 2 ? mHtml + mHtml : mHtml; // Dublar se houver volume para loop perfeito
+              mc.dataset.len = msgs.length.toString();
+
+              if (msgs.length > 2) {
+                mc.style.animation = 'none';
+                mc.offsetHeight; /* trigger reflow */
+                const dur = Math.max(15, msgs.length * 5);
+                mc.style.animation = `marquee-up ${dur}s linear infinite`;
+              } else {
+                mc.style.animation = 'none'; // Não anima se só tem 1 ou 2 msgs recados na tela grande
+              }
+            }
+          }
+        }
+      } catch (e) {
+        document.body.innerHTML += `<div style="background:red;color:white;position:fixed;bottom:0;left:0;width:100%;padding:20px;z-index:9999;">ERRO FATAL TELÃO: ${e.message}</div>`;
+      }
+    }
+
+    // Expõe renderAll para o sync.js chamar diretamente quando chegar atualização
+    window.renderAll = render;
+
+    // Inicia apenas se já autenticado, senão aguarda desbloqueio
+    if (sessionStorage.getItem('ff_telao_auth') === '1') {
+      document.getElementById('telaoGate').style.display = 'none';
+      setTimeout(initTelao, 100);
+    } else {
+      setTimeout(() => {
+        const inp = document.getElementById('telaoPin');
+        if (inp) inp.focus();
+      }, 100);
+    }
+  </script>
+
+  <script>
+    // ── Gate de senha do Telão ─────────────────────────
+    const TELAO_PASS = '783552';
+
+    function checkTelaoPin() {
+      const input  = document.getElementById('telaoPin');
+      const errEl  = document.getElementById('telaoErr');
+      if (input.value === TELAO_PASS) {
+        document.getElementById('telaoGate').style.display = 'none';
+        sessionStorage.setItem('ff_telao_auth', '1');
+        initTelao();
+      } else {
+        errEl.style.display = 'block';
+        input.value = '';
+        input.focus();
+        input.style.borderColor = 'var(--coral)';
+        setTimeout(() => { input.style.borderColor = ''; }, 1000);
+      }
+    }
+  </script>
+</body>
+
+</html>

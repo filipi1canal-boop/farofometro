@@ -1,0 +1,13 @@
+{
+  "name": "farofometro",
+  "version": "4.0.0",
+  "description": "Farofômetro - App de votação tropical para eventos",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
