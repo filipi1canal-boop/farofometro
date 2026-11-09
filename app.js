@@ -50,6 +50,7 @@ const DEFAULT_STATE = {
   participants: [],
   votes: [],
   messages: [],
+  punishments: [],
   currentDay: 1,
   votingOpen: false,
   adminPin: MASTER_PIN
@@ -66,6 +67,7 @@ function getState() {
     if (!Array.isArray(state.participants)) state.participants = [];
     if (!Array.isArray(state.votes)) state.votes = [];
     if (!Array.isArray(state.messages)) state.messages = [];
+    if (!Array.isArray(state.punishments)) state.punishments = [];
     if (!state.adminPin) state.adminPin = MASTER_PIN;
     if (!state.currentDay) state.currentDay = 1;
     
@@ -197,6 +199,35 @@ function getTotalVotesFor(pId, day) {
   return getState().votes.filter(v => v.to === pId && v.day === day).length;
 }
 
+// ── Punishments ──────────────────────────────────────────
+function addPunishment(participantId, type, reason) {
+  const state = getState();
+  const p = {
+    id: genId(),
+    participantId: participantId,
+    type: type,
+    reason: reason.trim(),
+    day: state.currentDay,
+    ts: Date.now()
+  };
+  state.punishments.push(p);
+  setState(state);
+  return p;
+}
+
+function removePunishment(id) {
+  const state = getState();
+  state.punishments = state.punishments.filter(p => p.id !== id);
+  setState(state);
+}
+
+function getPunishments(day) {
+  const state = getState();
+  const punishments = Array.isArray(state.punishments) ? state.punishments : [];
+  if (day === undefined || day === null) return punishments;
+  return punishments.filter(p => p.day === day);
+}
+
 // ── Admin ────────────────────────────────────────────────
 function checkPin(val) {
   const s = getState();
@@ -267,6 +298,7 @@ window.FF = {
   addParticipant, removeParticipant,
   hasVoted, submitVotes,
   getResults, getMessages, getVoterCount, getTotalVotesFor,
+  addPunishment, removePunishment, getPunishments,
   checkPin, setDay, toggleVoting,
   avatarHtml, showToast, addRipple
 };

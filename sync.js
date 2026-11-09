@@ -64,6 +64,7 @@
         participants: Array.isArray(serverState.participants) ? serverState.participants : [],
         votes:        Array.isArray(serverState.votes) ? serverState.votes : [],
         messages:     Array.isArray(serverState.messages) ? serverState.messages : [],
+        punishments:  Array.isArray(serverState.punishments) ? serverState.punishments : [],
         currentDay:   serverState.currentDay || 1,
         votingOpen:   !!serverState.votingOpen,
         adminPin:     serverState.adminPin || (window.FF ? window.FF.MASTER_PIN : '783552')
@@ -267,6 +268,7 @@
       participants: [],
       votes: [],
       messages: [],
+      punishments: [],
       currentDay: 1,
       votingOpen: false,
       adminPin: window.FF ? window.FF.MASTER_PIN : '783552'
@@ -278,11 +280,29 @@
     const s = window.FF.getState();
     s.participants = (s.participants || []).filter(p => p.id !== id);
     s.votes = (s.votes || []).filter(v => v.from !== id && v.to !== id);
+    s.punishments = (s.punishments || []).filter(p => p.participantId !== id);
     return await pushAuthoritative(s);
   };
 
   window._ffForceSync = async function() {
     await pushAuthoritative(window.FF.getState());
+  };
+
+  window._ffResetPunishments = async function() {
+    const s = window.FF.getState();
+    s.punishments = [];
+    return await pushAuthoritative(s);
+  };
+
+  window._ffRemovePunishment = async function(id) {
+    const s = window.FF.getState();
+    s.punishments = (s.punishments || []).filter(p => p.id !== id);
+    return await pushAuthoritative(s);
+  };
+
+  window._ffAddPunishment = async function(participantId, type, reason) {
+    window.FF.addPunishment(participantId, type, reason);
+    return await pushAuthoritative(window.FF.getState());
   };
 
   // Intercepta as funções do app.js
@@ -294,7 +314,7 @@
       return result;
     };
 
-    const AUTH_MUTATORS = ['addParticipant', 'removeParticipant', 'setDay', 'toggleVoting'];
+    const AUTH_MUTATORS = ['addParticipant', 'removeParticipant', 'setDay', 'toggleVoting', 'addPunishment', 'removePunishment'];
     AUTH_MUTATORS.forEach(function(name) {
       if (typeof window.FF[name] !== 'function') return;
       const _orig = window.FF[name];
