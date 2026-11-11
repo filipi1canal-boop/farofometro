@@ -65,6 +65,7 @@
         votes:        Array.isArray(serverState.votes) ? serverState.votes : [],
         messages:     Array.isArray(serverState.messages) ? serverState.messages : [],
         punishments:  Array.isArray(serverState.punishments) ? serverState.punishments : [],
+        notification: serverState.notification && typeof serverState.notification === 'object' ? serverState.notification : null,
         currentDay:   serverState.currentDay || 1,
         votingOpen:   !!serverState.votingOpen,
         adminPin:     serverState.adminPin || (window.FF ? window.FF.MASTER_PIN : '783552')

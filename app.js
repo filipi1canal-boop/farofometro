@@ -51,6 +51,7 @@ const DEFAULT_STATE = {
   votes: [],
   messages: [],
   punishments: [],
+  notification: null,
   currentDay: 1,
   votingOpen: false,
   adminPin: MASTER_PIN
@@ -68,6 +69,7 @@ function getState() {
     if (!Array.isArray(state.votes)) state.votes = [];
     if (!Array.isArray(state.messages)) state.messages = [];
     if (!Array.isArray(state.punishments)) state.punishments = [];
+    if (state.notification && typeof state.notification !== 'object') state.notification = null;
     if (!state.adminPin) state.adminPin = MASTER_PIN;
     if (!state.currentDay) state.currentDay = 1;
     
@@ -120,9 +122,11 @@ function encodeImage(file) {
 // ── Participants ─────────────────────────────────────────
 function addParticipant(name, photoBase64) {
   const state = getState();
+  const cleanName = typeof name === 'string' ? name.trim() : '';
+  if (!cleanName) return null;
   const p = {
     id: genId(),
-    name: name.trim(),
+    name: cleanName,
     photo: photoBase64 || '',
     createdAt: new Date().toISOString()
   };
@@ -151,10 +155,19 @@ function hasVoted(participantId, day) {
 
 function submitVotes(fromId, votesObj, messageText) {
   const state = getState();
+  if (!state.votingOpen) return { ok: false, reason: 'voting_closed' };
+  if (!state.participants.some(p => p.id === fromId)) return { ok: false, reason: 'invalid_participant' };
   if (hasVoted(fromId, state.currentDay)) return { ok: false, reason: 'already_voted' };
 
-  for (const [toId, emojiId] of Object.entries(votesObj)) {
-    if (toId === fromId) continue;
+  // A ballot is only valid if every other current participant received one category.
+  const expected = state.participants.filter(p => p.id !== fromId).map(p => p.id);
+  if (!expected.length) return { ok: false, reason: 'insufficient_participants' };
+  if (!expected.every(id => votesObj && EMOJIS.some(e => e.id === votesObj[id]))) {
+    return { ok: false, reason: 'incomplete_ballot' };
+  }
+
+  for (const toId of expected) {
+    const emojiId = votesObj[toId];
     state.votes.push({
       id: genId(), day: state.currentDay,
       from: fromId, to: toId, emoji: emojiId, ts: Date.now()
@@ -239,7 +252,20 @@ function setDay(day) {
 }
 
 function toggleVoting() {
-  const s = getState(); s.votingOpen = !s.votingOpen; setState(s); return s.votingOpen;
+  const s = getState();
+  s.votingOpen = !s.votingOpen;
+  s.notification = {
+    id: genId(),
+    title: s.votingOpen ? 'Votação aberta! 🌴' : 'Votação encerrada',
+    body: s.votingOpen
+      ? 'A votação está aberta. Entre agora e registre seus votos.'
+      : 'A votação deste dia foi encerrada. Obrigado por participar!',
+    url: 'votar.html',
+    ts: Date.now()
+  };
+  setState(s);
+  if (typeof window !== 'undefined' && typeof Event !== 'undefined') window.dispatchEvent(new Event('ff:notification'));
+  return s.votingOpen;
 }
 
 // ── Helpers ──────────────────────────────────────────────

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest">
   <title>Admin — Farofômetro</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -491,6 +492,7 @@
 <script src="app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js"></script>
+<script src="pwa.js"></script>
 <script>
   // ── Tab System ──────────────────────────────────────────
   function showTab(id) {
@@ -631,6 +633,9 @@
     window.addP = async function() {
       const name = document.getElementById('pName').value.trim();
       if (!name) return FF.showToast('Nome obrigatório!', 'error');
+      if (FF.getState().participants.some(function(p) { return p.name.trim().toLowerCase() === name.toLowerCase(); })) {
+        return FF.showToast('Este nome já está cadastrado!', 'error');
+      }
       const fileInput = document.getElementById('pPhotoFile');
       const file = fileInput.files[0];
       let base64 = '';
@@ -645,7 +650,9 @@
       FF.showToast(name + ' adicionado!');
     };
 
-    window.remP = async function(id, name) {
+    window.remP = async function(id) {
+      const found = FF.getState().participants.find(function(p) { return p.id === id; });
+      const name = found ? found.name : 'este participante';
       if(!confirm('Excluir ' + name + '?')) return;
       try {
         if (typeof window._ffRemoveParticipant === 'function') await window._ffRemoveParticipant(id);
@@ -769,7 +776,7 @@
               '<div class="pcard-badges">' + votedBadge + punBadge + '</div>' +
               '<div class="pcard-votes">Recebeu ' + totalVotes + ' voto(s)</div>' +
               '<div class="pcard-actions">' +
-              '<button class="pcard-del" onclick="window.remP(\'' + p.id + '\',\'' + FF.escHtml(p.name) + '\')">🗑️ Remover</button>' +
+              '<button class="pcard-del" onclick="window.remP(\'' + p.id + '\')">🗑️ Remover</button>' +
               '</div>' +
               '</div>';
           }).join('');

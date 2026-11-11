@@ -1,0 +1,12 @@
+{
+  "name": "Farofômetro",
+  "short_name": "Farofômetro",
+  "description": "Votação tropical para eventos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#003049",
+  "theme_color": "#003049",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

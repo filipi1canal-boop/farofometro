@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#003049">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
   <title>Farofômetro 🌴</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -106,12 +110,19 @@
       </div>
     </a>
   </div>
+
+  <div class="glass anim-up" style="animation-delay:0.4s; text-align:left;">
+    <h2 style="font-size:1.05rem; margin-bottom:6px;">📲 Instale e receba avisos</h2>
+    <p style="font-size:.85rem;color:var(--c-text2);margin-bottom:12px;">Ative as notificações para saber quando a votação abrir ou encerrar.</p>
+    <button class="btn btn-ghost w-full" onclick="window.FFEnableNotifications && window.FFEnableNotifications()">ATIVAR NOTIFICAÇÕES</button>
+  </div>
   
 </div>
 
 <script src="app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js"></script>
+<script src="pwa.js"></script>
 <script>
   const { getState } = FF;
   const s = getState();
